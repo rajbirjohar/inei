@@ -1,15 +1,8 @@
-# EXAMPLE USAGE:
-#
-#   Refer for explanation to following link:
-#   https://lefthook.dev/configuration/
-#
 pre-push:
   parallel: true
   commands:
     typecheck:
       run: pnpm typecheck
-    test:
-      run: pnpm test
 pre-commit:
   parallel: true
   commands:

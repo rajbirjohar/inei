@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fails the PR if code changes need a release but there's no .changeset entry.
+  require-changeset:
+    name: Require changeset if src changed
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      SKIP_RELEASE_LABEL: skip-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: List changed files (base..head)
+        id: diff
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed.txt
+          echo "---- Changed files ----"
+          cat changed.txt || true
+
+      - name: Did release-affecting files change?
+        id: scope
+        run: |
+          if grep -E '^(src/|types/|package\.json$|vite\.config\.(ts|js)$|tsconfig\.json$)' changed.txt >/dev/null; then
+            echo "affects_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "affects_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Does the PR include a Changeset?
+        id: has_changeset
+        run: |
+          if grep -E '^\.changeset/.*\.md$' changed.txt >/dev/null; then
+            echo "has_changeset=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changeset=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Is skip label present?
+        id: label
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels) }}'
+          echo "$LABELS" | grep -qi "\"name\":\s*\"${SKIP_RELEASE_LABEL}\"" && \
+            echo "skip=true" >> "$GITHUB_OUTPUT" || echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce changeset
+        if: steps.scope.outputs.affects_release == 'true' &&
+          steps.has_changeset.outputs.has_changeset == 'false' &&
+          steps.label.outputs.skip == 'false'
+        run: |
+          echo "::error::This PR changes source but has no Changeset. Run 'pnpm changeset' and commit the .changeset/*.md (or add the '${{ env.SKIP_RELEASE_LABEL }}' label to bypass)."
+          exit 1
+
+  test:
+    runs-on: ubuntu-latest
+    # Run tests even if require-changeset fails, so you still see failures.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # If your formatter supports a read-only mode, switch to it here.
+      - name: Lint & Format
+        run: pnpm format
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test (coverage)
+        run: pnpm test:coverage
+
+      - name: Build
+        run: pnpm build

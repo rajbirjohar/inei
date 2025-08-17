@@ -26,9 +26,11 @@
     "test:coverage": "vitest run --coverage",
     "demo": "tsx demo/index.ts",
     "build": "vite build",
+    "lint": "ultracite lint",
     "format": "ultracite format",
     "prepare": "lefthook install",
     "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build",
     "release:version": "changeset version && pnpm install",
     "release:publish": "changeset publish",
     "release": "pnpm run release:version && pnpm build && pnpm run release:publish"
