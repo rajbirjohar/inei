@@ -1,5 +1,11 @@
 # inei
 
+## 1.0.2
+
+### Patch Changes
+
+- 5049cd9: add github ci workflows
+
 ## 1.0.1
 
 ### Patch Changes
