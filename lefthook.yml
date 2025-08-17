@@ -3,22 +3,15 @@
 #   Refer for explanation to following link:
 #   https://lefthook.dev/configuration/
 #
-# pre-push:
-#   jobs:
-#     - name: packages audit
-#       tags:
-#         - frontend
-#         - security
-#       run: yarn audit
-#
-#     - name: gems audit
-#       tags:
-#         - backend
-#         - security
-#       run: bundle audit
-#
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: pnpm typecheck
+    test:
+      run: pnpm test
 pre-commit:
   parallel: true
   commands:
     lint-staged:
-      run: pnpm lint-staged
+      run: pnpm exec lint-staged
