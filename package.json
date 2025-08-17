@@ -9,6 +9,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -25,7 +28,8 @@
     "build": "vite build",
     "format": "ultracite format",
     "prepare": "lefthook install",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm typecheck && pnpm test:coverage && pnpm build"
   },
   "keywords": [
     "exif",
