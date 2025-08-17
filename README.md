@@ -46,6 +46,22 @@ if (exifData.ok) {
 } else {
     console.error('Error parsing EXIF data:', exifData.error);
 }
+
+// And it will contain the parsed EXIF data in a structured format.
+{
+    Make: 'Canon',
+    Model: 'Canon EOS R6',
+    DateTimeOriginal: '2023:10:01 12:34:56',
+    ExposureTime: '1/125',
+    FNumber: '8.0',
+    ISO: 100,
+    // ... other EXIF tags
+}
 ```
 
-## 
+## Extracted EXIF Data
+
+For a full list of what this package extracts by default, you 
+can view `tags.ts` in the source code.
+
+

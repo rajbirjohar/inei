@@ -23,7 +23,9 @@
     "test:coverage": "vitest run --coverage",
     "demo": "tsx demo/index.ts",
     "build": "vite build",
-    "check": "biome check"
+    "format": "ultracite format",
+    "prepare": "lefthook install",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "exif",
@@ -42,6 +44,7 @@
     "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "3.2.4",
+    "lefthook": "^1.12.3",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
     "ultracite": "5.2.3",
@@ -51,7 +54,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "npx ultracite format"
+      "ultracite format"
     ]
   }
 }
