@@ -1,9 +1,5 @@
-import { createParser } from "./factory";
-import type { ParserOptions } from "./parser";
-
-export { createParser } from "./factory";
-export { ExifParser, type ParserOptions } from "./parser";
-export * from "./types";
+import { createParser } from './factory';
+import type { ParserOptions } from './parser';
 
 /**
  * @description
@@ -12,9 +8,9 @@ export * from "./types";
  * @param {ParserOptions} [opts] - Optional parser options.
  */
 export function parseExif(
-	input: ArrayBuffer | Uint8Array | Buffer,
-	opts?: ParserOptions,
+  input: ArrayBuffer | Uint8Array | Buffer,
+  opts?: ParserOptions
 ) {
-	const parser = createParser(input, opts);
-	return parser.parse();
+  const parser = createParser(input, opts);
+  return parser.parse();
 }

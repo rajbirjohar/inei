@@ -1,12 +1,13 @@
-import { ByteStream } from "./byte-stream";
+import { ByteStream } from './byte-stream';
+import { TiffType } from './tiff-types';
 import {
-	ExifSectionKind,
-	type RawTagValue,
-	type ReadValueInlineReturn,
-	type ReadValuesByTypeReturn,
-	type ThumbnailInfo,
-	ThumbnailType,
-} from "./types";
+  ExifSectionKind,
+  type RawTagValue,
+  type ReadValueInlineReturn,
+  type ReadValuesByTypeReturn,
+  type ThumbnailInfo,
+  ThumbnailType,
+} from './types';
 
 /**
  * @module exif-sections
@@ -28,52 +29,150 @@ import {
 
 /**
  * @description
- * Enumeration of TIFF data types used in EXIF IFDs.
- */
-export enum TiffType {
-	BYTE = 1,
-	ASCII = 2,
-	SHORT = 3,
-	LONG = 4,
-	RATIONAL = 5,
-	UNDEFINED = 7,
-	SLONG = 9,
-	SRATIONAL = 10,
-}
-
-/**
- * @description
  * Mapping of TIFF data types to their byte sizes.
  */
 const TYPE_SIZES: Record<TiffType, number> = {
-	[TiffType.BYTE]: 1,
-	[TiffType.ASCII]: 1,
-	[TiffType.SHORT]: 2,
-	[TiffType.LONG]: 4,
-	[TiffType.RATIONAL]: 8,
-	[TiffType.UNDEFINED]: 1,
-	[TiffType.SLONG]: 4,
-	[TiffType.SRATIONAL]: 8,
+  [TiffType.BYTE]: 1,
+  [TiffType.ASCII]: 1,
+  [TiffType.SHORT]: 2,
+  [TiffType.LONG]: 4,
+  [TiffType.RATIONAL]: 8,
+  [TiffType.UNDEFINED]: 1,
+  [TiffType.SLONG]: 4,
+  [TiffType.SRATIONAL]: 8,
 };
 
 type NonUndef<T> = T extends undefined ? never : T;
 
 export type OnTag = (
-	section: ExifSectionKind,
-	tagId: number,
-	value: NonUndef<RawTagValue>,
-	format: TiffType,
+  section: ExifSectionKind,
+  tagId: number,
+  value: NonUndef<RawTagValue>,
+  format: TiffType
 ) => void;
 
 /**
  * @description
  * Result type for reading IFDs from an APP1 payload.
  */
-export interface ReadIFDsResult {
-	ok: boolean;
-	/** offset within the APP1 payload where TIFF header starts (i.e., 6) */
-	tiffBase: number;
-	thumbnail?: ThumbnailInfo & { compression?: number };
+export type ReadIFDsResult = {
+  ok: boolean;
+  /** offset within the APP1 payload where TIFF header starts (i.e., 6) */
+  tiffBase: number;
+  thumbnail?: ThumbnailInfo & { compression?: number };
+};
+
+// Pointer tags
+const TAG_EXIF_OFFSET = 0x8769;
+const TAG_GPS_INFO = 0x8825;
+
+// IFD1 (thumbnail) tags
+const TAG_THUMB_OFFSET = 0x0201;
+const TAG_THUMB_LENGTH = 0x0202;
+const TAG_COMPRESSION = 0x0103; // 6=JPEG, 1=TIFF
+
+const TIFF_MAGIC = 0x002a;
+
+function okNumber(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n) && n > 0;
+}
+
+/** Read "Exif\0\0" and return a TIFF stream positioned right after. */
+function openTiffFromApp1(
+  app1: ByteStream
+):
+  | { ok: true; tiff: ByteStream; tiffBase: number }
+  | { ok: false; tiffBase: number } {
+  const sig = app1.readString(4);
+  const nul = app1.readString(2);
+  const tiffBase = app1.tell();
+  if (sig !== 'Exif' || nul !== '\u0000\u0000') {
+    return { ok: false, tiffBase };
+  }
+  return { ok: true, tiff: app1.branch(tiffBase), tiffBase };
+}
+
+/** Read BOM and set endianness on the TIFF stream. */
+function configureEndian(tiff: ByteStream): boolean {
+  const b0 = tiff.u8();
+  const b1 = tiff.u8();
+  if (b0 === 0x49 && b1 === 0x49) {
+    tiff.setEndian('LE');
+    return true;
+  }
+  if (b0 === 0x4d && b1 === 0x4d) {
+    tiff.setEndian('BE');
+    return true;
+  }
+  return false;
+}
+
+/** Validate TIFF magic and return IFD0 stream. */
+function openIFD0(tiff: ByteStream): ByteStream | undefined {
+  const magic = tiff.u16();
+  if (magic !== TIFF_MAGIC) {
+    return;
+  }
+  const firstIFDOffset = tiff.u32();
+  return tiff.branch(firstIFDOffset);
+}
+
+/** Read an IFD at offset if present. */
+function readIfdAt(
+  tiff: ByteStream,
+  offset: number | undefined,
+  section: ExifSectionKind,
+  onTag: OnTag
+): void {
+  if (!okNumber(offset)) {
+    return;
+  }
+  const dir = tiff.branch(offset);
+  readIFD({ tiff, dir, section, onTag });
+}
+
+/** Collect thumbnail info from IFD1; returns undefined if incomplete. */
+function readThumbnailFromIFD1(
+  tiff: ByteStream,
+  ifd1Offset: number | undefined,
+  onTag: OnTag
+): ReadIFDsResult['thumbnail'] | undefined {
+  if (!okNumber(ifd1Offset)) {
+    return;
+  }
+
+  const dir = tiff.branch(ifd1Offset);
+  let thumbOffset: number | undefined;
+  let thumbLength: number | undefined;
+  let compression: number | undefined;
+
+  readIFD({
+    tiff,
+    dir,
+    section: ExifSectionKind.IFD1,
+    onTag: (sec, tagId, value, fmt) => {
+      // forward to caller
+      onTag(sec, tagId, value, fmt);
+      // collect thumbnail fields
+      if (tagId === TAG_THUMB_OFFSET && typeof value === 'number') {
+        thumbOffset = value;
+      } else if (tagId === TAG_THUMB_LENGTH && typeof value === 'number') {
+        thumbLength = value;
+      } else if (tagId === TAG_COMPRESSION && typeof value === 'number') {
+        compression = value;
+      }
+    },
+  });
+
+  if (okNumber(thumbOffset) && okNumber(thumbLength)) {
+    return {
+      type: compression === 6 ? ThumbnailType.JPEG : ThumbnailType.TIFF,
+      offsetFromTiff: thumbOffset,
+      length: thumbLength,
+      compression,
+    };
+  }
+  return;
 }
 
 /**
@@ -85,99 +184,47 @@ export interface ReadIFDsResult {
  * @return {ReadIFDsResult} - Result containing success status, TIFF base offset, and optional thumbnail info.
  */
 export function readIFDs(app1: ByteStream, onTag: OnTag): ReadIFDsResult {
-	// Expect "Exif\0\0"
-	const sig = app1.readString(4);
-	const zz = app1.readString(2);
-	if (sig !== "Exif" || zz !== "\u0000\u0000") {
-		return { ok: false, tiffBase: 0 };
-	}
+  // 1) Validate APP1/Exif header and open TIFF
+  const open = openTiffFromApp1(app1);
+  if (!open.ok) {
+    return { ok: false, tiffBase: open.tiffBase };
+  }
+  const { tiff, tiffBase } = open;
 
-	const tiffBase = app1.tell(); // start of TIFF header
-	const tiff = app1.branch(tiffBase); // from current
+  // 2) Endianness + IFD0
+  if (!configureEndian(tiff)) {
+    return { ok: false, tiffBase };
+  }
+  const ifd0 = openIFD0(tiff);
+  if (!ifd0) {
+    return { ok: false, tiffBase };
+  }
 
-	// BOM
-	const b0 = tiff.u8();
-	const b1 = tiff.u8();
-	if (b0 === 0x49 && b1 === 0x49) {
-		tiff.setEndian("LE");
-	} else if (b0 === 0x4d && b1 === 0x4d) {
-		tiff.setEndian("BE");
-	} else
-		return {
-			ok: false,
-			tiffBase,
-		};
+  // 3) Read IFD0, collect pointer offsets + IFD1 offset
+  let exifIFDOffset: number | undefined;
+  let gpsIFDOffset: number | undefined;
+  const ifd1Offset = readIFD({
+    tiff,
+    dir: ifd0,
+    section: ExifSectionKind.IFD0,
+    onTag,
+    onPointer: (tagId, value) => {
+      if (tagId === TAG_EXIF_OFFSET && typeof value === 'number') {
+        exifIFDOffset = value;
+      } else if (tagId === TAG_GPS_INFO && typeof value === 'number') {
+        gpsIFDOffset = value;
+      }
+    },
+  });
 
-	const magic = tiff.u16();
-	if (magic !== 0x002a) return { ok: false, tiffBase };
+  // 4) SubIFD (Exif) and GPS IFD (optional)
+  readIfdAt(tiff, exifIFDOffset, ExifSectionKind.SubIFD, onTag);
+  readIfdAt(tiff, gpsIFDOffset, ExifSectionKind.GPSIFD, onTag);
 
-	const firstIFDOffset = tiff.u32();
-	const ifd0 = tiff.branch(firstIFDOffset);
+  // 5) IFD1 (thumbnail)
+  const thumbnail = readThumbnailFromIFD1(tiff, ifd1Offset, onTag);
 
-	let exifIFDOffset: number | undefined;
-	let gpsIFDOffset: number | undefined;
-	let ifd1Offset: number | undefined;
-
-	// IFD0
-	ifd1Offset = readIFD(
-		tiff,
-		ifd0,
-		ExifSectionKind.IFD0,
-		onTag,
-		(tagId, value) => {
-			// Pointer tags (ExifOffset, GPSInfo)
-			if (tagId === 0x8769 && typeof value === "number") {
-				exifIFDOffset = value;
-			}
-			if (tagId === 0x8825 && typeof value === "number") {
-				gpsIFDOffset = value;
-			}
-		},
-	);
-
-	// SubIFD (Exif)
-	if (typeof exifIFDOffset === "number" && exifIFDOffset > 0) {
-		const sub = tiff.branch(exifIFDOffset);
-		readIFD(tiff, sub, ExifSectionKind.SubIFD, onTag);
-	}
-
-	// GPS IFD
-	if (typeof gpsIFDOffset === "number" && gpsIFDOffset > 0) {
-		const gps = tiff.branch(gpsIFDOffset);
-		readIFD(tiff, gps, ExifSectionKind.GPSIFD, onTag);
-	}
-
-	// IFD1 (thumbnail)
-	let thumb: ReadIFDsResult["thumbnail"];
-
-	if (typeof ifd1Offset === "number" && ifd1Offset > 0) {
-		const ifd1 = tiff.branch(ifd1Offset);
-		let thumbOffset: number | undefined;
-		let thumbLength: number | undefined;
-		let compression: number | undefined; // 6=JPEG, 1=TIFF
-
-		readIFD(tiff, ifd1, ExifSectionKind.IFD1, (sec, tagId, value, fmt) => {
-			onTag(sec, tagId, value, fmt);
-			if (tagId === 0x0201 && typeof value === "number") thumbOffset = value;
-			if (tagId === 0x0202 && typeof value === "number") thumbLength = value;
-			if (tagId === 0x0103 && typeof value === "number") compression = value;
-		});
-
-		if (
-			typeof thumbOffset === "number" &&
-			typeof thumbLength === "number" &&
-			thumbLength > 0
-		) {
-			thumb = {
-				type: compression === 6 ? ThumbnailType.JPEG : ThumbnailType.TIFF,
-				offsetFromTiff: thumbOffset,
-				length: thumbLength,
-				compression,
-			};
-		}
-	}
-
-	return { ok: true, tiffBase, thumbnail: thumb };
+  return { ok: true, tiffBase, thumbnail };
 }
 
 /**
@@ -193,71 +240,71 @@ export function readIFDs(app1: ByteStream, onTag: OnTag): ReadIFDsResult {
  * @param {number} [onPointer.value] - The value of the pointer tag (offset).
  * @return {number} - The offset to the next IFD, or 0 if none.
  */
-function readIFD(
-	tiff: ByteStream,
-	dir: ByteStream,
-	section: ExifSectionKind,
-	onTag: OnTag,
-	onPointer?: (tagId: number, value: number) => void,
-): number {
-	const numEntries = dir.u16();
-	for (let i = 0; i < numEntries; i++) {
-		const tagId = dir.u16();
-		const type = dir.u16() as TiffType;
-		const count = dir.u32();
+function readIFD({
+  tiff,
+  dir,
+  section,
+  onTag,
+  onPointer,
+}: {
+  tiff: ByteStream;
+  dir: ByteStream;
+  section: ExifSectionKind;
+  onTag: OnTag;
+  onPointer?: (tagId: number, value: number) => void;
+}): number {
+  const numEntries = dir.u16();
+  for (let i = 0; i < numEntries; i++) {
+    const tagId = dir.u16();
+    const type = dir.u16() as TiffType;
+    const count = dir.u32();
 
-		const valueOrOffset = dir.u32();
-		const totalBytes = (TYPE_SIZES[type] ?? 0) * count;
+    const valueOrOffset = dir.u32();
+    const totalBytes = (TYPE_SIZES[type] ?? 0) * count;
 
-		let value: ReadValueInlineReturn | ReadValuesByTypeReturn;
+    let value: ReadValueInlineReturn | ReadValuesByTypeReturn;
 
-		if (totalBytes <= 4) {
-			const inline = new Uint8Array(4);
-			if (tiff.endianness() === "LE") {
-				inline[0] = valueOrOffset & 0xff;
-				inline[1] = (valueOrOffset >>> 8) & 0xff;
-				inline[2] = (valueOrOffset >>> 16) & 0xff;
-				inline[3] = (valueOrOffset >>> 24) & 0xff;
-			} else {
-				inline[3] = valueOrOffset & 0xff;
-				inline[2] = (valueOrOffset >>> 8) & 0xff;
-				inline[1] = (valueOrOffset >>> 16) & 0xff;
-				inline[0] = (valueOrOffset >>> 24) & 0xff;
-			}
-			value = readValueInline(
-				new ByteStream(inline, tiff.endianness()),
-				type,
-				count,
-			);
-		} else {
-			const valStream = tiff.branch(valueOrOffset);
+    if (totalBytes <= 4) {
+      const inline = new Uint8Array(4);
+      new DataView(inline.buffer, inline.byteOffset, 4).setUint32(
+        0,
+        valueOrOffset || 0, // ensure 32-bit integer
+        tiff.endianness() === 'LE'
+      );
+      value = readValueInline(
+        new ByteStream(inline, tiff.endianness()),
+        type,
+        count
+      );
+    } else {
+      const valStream = tiff.branch(valueOrOffset);
 
-			value = readValueByType(valStream, type, count);
-		}
+      value = readValueByType(valStream, type, count);
+    }
 
-		// Skip entries we don't know how to represent
-		if (value === undefined) {
-			continue;
-		}
+    // Skip entries we don't know how to represent
+    if (value === undefined) {
+      continue;
+    }
 
-		// Special-case pointers (we know "value" is defined here)
-		if (
-			onPointer &&
-			typeof value === "number" &&
-			(tagId === 0x8769 || tagId === 0x8825)
-		) {
-			onPointer(tagId, value);
-		}
+    // Special-case pointers (we know "value" is defined here)
+    if (
+      onPointer &&
+      typeof value === 'number' &&
+      (tagId === 0x87_69 || tagId === 0x88_25)
+    ) {
+      onPointer(tagId, value);
+    }
 
-		if (value === undefined) {
-			continue;
-		}
+    if (value === undefined) {
+      continue;
+    }
 
-		onTag(section, tagId, value, type);
-	}
+    onTag(section, tagId, value, type);
+  }
 
-	const nextIFDOffset = dir.u32();
-	return nextIFDOffset;
+  const nextIFDOffset = dir.u32();
+  return nextIFDOffset;
 }
 
 /**
@@ -270,50 +317,122 @@ function readIFD(
  * @return {ReadValueInlineReturn} - The parsed value, which can be a single value or an array.
  */
 export function readValueInline(
-	s: ByteStream,
-	type: TiffType,
-	count: number,
+  s: ByteStream,
+  type: TiffType,
+  count: number
 ): ReadValueInlineReturn {
-	// For inline, only small counts make sense.
-	switch (type) {
-		case TiffType.BYTE: {
-			if (count === 1) {
-				return s.u8();
-			}
-			const arr: number[] = [];
-			for (let i = 0; i < count; i++) {
-				arr.push(s.u8());
-			}
-			return arr;
-		}
-		case TiffType.SHORT: {
-			if (count === 1) {
-				return s.u16();
-			}
-			const arr: number[] = [];
-			for (let i = 0; i < count; i++) {
-				arr.push(s.u16());
-			}
-			return arr;
-		}
-		case TiffType.ASCII: {
-			const text = s.readString(count);
-			return text.replace(/\0+$/, "");
-		}
-		case TiffType.LONG: {
-			if (count === 1) {
-				return s.u32();
-			}
-			const arr: number[] = [];
-			for (let i = 0; i < count; i++) {
-				arr.push(s.u32());
-			}
-			return arr;
-		}
-		default:
-			return undefined;
-	}
+  // For inline, only small counts make sense.
+  switch (type) {
+    case TiffType.BYTE: {
+      if (count === 1) {
+        return s.u8();
+      }
+      const arr: number[] = [];
+      for (let i = 0; i < count; i++) {
+        arr.push(s.u8());
+      }
+      return arr;
+    }
+    case TiffType.SHORT: {
+      if (count === 1) {
+        return s.u16();
+      }
+      const arr: number[] = [];
+      for (let i = 0; i < count; i++) {
+        arr.push(s.u16());
+      }
+      return arr;
+    }
+    case TiffType.ASCII: {
+      const text = s.readString(count);
+      // biome-ignore lint/performance/useTopLevelRegex: This is a small string operation.
+      return text.replace(/\0+$/, '');
+    }
+    case TiffType.LONG: {
+      if (count === 1) {
+        return s.u32();
+      }
+      const arr: number[] = [];
+      for (let i = 0; i < count; i++) {
+        arr.push(s.u32());
+      }
+      return arr;
+    }
+    default:
+      return;
+  }
 }
+
+type ReaderReturn =
+  | string
+  | number
+  | number[]
+  | [number, number]
+  | [number, number][]
+  | Uint8Array
+  | undefined;
+
+type Reader = (s: ByteStream, count: number) => ReaderReturn;
+
+// Hoisted for lint/perf: strip trailing NULs from ASCII
+const TRAILING_NULS = /\0+$/;
+
+/** Read one or many numeric values with a provided "read one" fn. */
+function readOneOrManyNumber(
+  _s: ByteStream,
+  count: number,
+  readOne: () => number
+): number | number[] {
+  if (count === 1) {
+    return readOne();
+  }
+  const out = new Array<number>(count);
+  for (let i = 0; i < count; i++) {
+    out[i] = readOne();
+  }
+  return out;
+}
+
+/** Read one or many rational pairs [num, den] with a provided "read number" fn. */
+function readOneOrManyPair(
+  _s: ByteStream,
+  count: number,
+  readNum: () => number
+): [number, number] | [number, number][] {
+  if (count === 1) {
+    return [readNum(), readNum()];
+  }
+  const out = new Array<[number, number]>(count);
+  for (let i = 0; i < count; i++) {
+    out[i] = [readNum(), readNum()];
+  }
+  return out;
+}
+
+/**
+ * Table-driven readers for each TIFF type.
+ * Using `satisfies` ensures we cover every TiffType at compile time.
+ */
+const READERS = {
+  [TiffType.BYTE]: (s, count) =>
+    count === 1 ? s.u8() : Array.from(s.slice(count)),
+
+  [TiffType.ASCII]: (s, count) =>
+    s.readString(count).replace(TRAILING_NULS, ''),
+
+  [TiffType.SHORT]: (s, count) => readOneOrManyNumber(s, count, () => s.u16()),
+
+  [TiffType.LONG]: (s, count) => readOneOrManyNumber(s, count, () => s.u32()),
+
+  [TiffType.RATIONAL]: (s, count) => readOneOrManyPair(s, count, () => s.u32()),
+
+  [TiffType.UNDEFINED]: (s, count) => s.slice(count),
+
+  [TiffType.SLONG]: (s, count) => readOneOrManyNumber(s, count, () => s.i32()),
+
+  [TiffType.SRATIONAL]: (s, count) =>
+    readOneOrManyPair(s, count, () => s.i32()),
+} satisfies Record<(typeof TiffType)[keyof typeof TiffType], Reader>;
 
 /**
  * @description
@@ -324,141 +443,11 @@ export function readValueInline(
  * @param {number} count - The number of items of this type.
  * @return {ReadValuesByTypeReturn} - The parsed value, which can be a single value or an array.
  */
-// exif-sections.ts (or wherever this lives)
 export function readValueByType(
-	s: ByteStream,
-	type: TiffType.BYTE,
-	count: 1,
-): number;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.BYTE,
-	count: number,
-): number[];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.ASCII,
-	count: number,
-): string;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SHORT,
-	count: 1,
-): number;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SHORT,
-	count: number,
-): number[];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.LONG,
-	count: 1,
-): number;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.LONG,
-	count: number,
-): number[];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SLONG,
-	count: 1,
-): number;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SLONG,
-	count: number,
-): number[];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.RATIONAL,
-	count: 1,
-): [number, number];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.RATIONAL,
-	count: number,
-): [number, number][];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SRATIONAL,
-	count: 1,
-): [number, number];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.SRATIONAL,
-	count: number,
-): [number, number][];
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType.UNDEFINED,
-	count: number,
-): Uint8Array;
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType,
-	count: number,
-):
-	| string
-	| number
-	| number[]
-	| [number, number]
-	| [number, number][]
-	| Uint8Array
-	| undefined;
-// Implementation signature (the one the body must satisfy)
-export function readValueByType(
-	s: ByteStream,
-	type: TiffType,
-	count: number,
-):
-	| string
-	| number
-	| number[]
-	| [number, number]
-	| [number, number][]
-	| Uint8Array
-	| undefined {
-	switch (type) {
-		case TiffType.BYTE: {
-			if (count === 1) return s.u8();
-			const arr = s.slice(count);
-			return Array.from(arr);
-		}
-		case TiffType.ASCII: {
-			const text = s.readString(count);
-			return text.replace(/\0+$/, "");
-		}
-		case TiffType.SHORT: {
-			const out: number[] = [];
-			for (let i = 0; i < count; i++) out.push(s.u16());
-			return count === 1 ? out[0] : out;
-		}
-		case TiffType.LONG: {
-			const out: number[] = [];
-			for (let i = 0; i < count; i++) out.push(s.u32());
-			return count === 1 ? out[0] : out;
-		}
-		case TiffType.RATIONAL: {
-			const out: [number, number][] = [];
-			for (let i = 0; i < count; i++) out.push([s.u32(), s.u32()]);
-			return count === 1 ? out[0] : out;
-		}
-		case TiffType.UNDEFINED: {
-			return s.slice(count);
-		}
-		case TiffType.SLONG: {
-			const out: number[] = [];
-			for (let i = 0; i < count; i++) out.push(s.i32());
-			return count === 1 ? out[0] : out;
-		}
-		case TiffType.SRATIONAL: {
-			const out: [number, number][] = [];
-			for (let i = 0; i < count; i++) out.push([s.i32(), s.i32()]);
-			return count === 1 ? out[0] : out;
-		}
-		default:
-			return undefined;
-	}
+  s: ByteStream,
+  type: (typeof TiffType)[keyof typeof TiffType],
+  count: number
+): ReaderReturn {
+  const reader = READERS[type];
+  return reader ? reader(s, count) : undefined;
 }

@@ -13,12 +13,14 @@
  * @returns {string | undefined} A formatted string representing the shutter speed, or undefined if input is invalid.
  */
 export function formatShutter(exposureTime?: number): string | undefined {
-	if (typeof exposureTime !== "number" || exposureTime <= 0) {
-		return undefined;
-	}
-	if (exposureTime >= 1) return `${Math.round(exposureTime * 10) / 10}s`;
-	const denom = Math.round(1 / exposureTime);
-	return `1/${denom}`;
+  if (typeof exposureTime !== 'number' || exposureTime <= 0) {
+    return;
+  }
+  if (exposureTime >= 1) {
+    return `${Math.round(exposureTime * 10) / 10}s`;
+  }
+  const denom = Math.round(1 / exposureTime);
+  return `1/${denom}`;
 }
 
 /**
@@ -29,27 +31,27 @@ export function formatShutter(exposureTime?: number): string | undefined {
  * @returns {string | undefined} A formatted string representing the ISO speed, or undefined if input is invalid.
  */
 export function formatAperture(fNumber?: number): string | undefined {
-	if (
-		typeof fNumber !== "number" ||
-		!Number.isFinite(fNumber) ||
-		fNumber <= 0
-	) {
-		return undefined;
-	}
-	const rounded = Math.round(fNumber * 10) / 10;
-	return `f/${rounded}`;
+  if (
+    typeof fNumber !== 'number' ||
+    !Number.isFinite(fNumber) ||
+    fNumber <= 0
+  ) {
+    return;
+  }
+  const rounded = Math.round(fNumber * 10) / 10;
+  return `f/${rounded}`;
 }
 
 const ExposureProgramMap: Record<number, string> = {
-	0: "Not defined",
-	1: "Manual",
-	2: "Normal program",
-	3: "Aperture priority",
-	4: "Shutter priority",
-	5: "Creative",
-	6: "Action",
-	7: "Portrait",
-	8: "Landscape",
+  0: 'Not defined',
+  1: 'Manual',
+  2: 'Normal program',
+  3: 'Aperture priority',
+  4: 'Shutter priority',
+  5: 'Creative',
+  6: 'Action',
+  7: 'Portrait',
+  8: 'Landscape',
 };
 
 /**
@@ -60,6 +62,8 @@ const ExposureProgramMap: Record<number, string> = {
  * @returns {string | undefined} A formatted string representing the exposure program, or undefined if input is invalid.
  */
 export function formatExposureProgram(n?: number): string | undefined {
-	if (typeof n !== "number") return undefined;
-	return ExposureProgramMap[n] ?? `Unknown(${n})`;
+  if (typeof n !== 'number') {
+    return;
+  }
+  return ExposureProgramMap[n] ?? `Unknown(${n})`;
 }
