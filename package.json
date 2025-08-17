@@ -29,7 +29,9 @@
     "format": "ultracite format",
     "prepare": "lefthook install",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm typecheck && pnpm test:coverage && pnpm build"
+    "release:version": "changeset version && pnpm install",
+    "release:publish": "changeset publish",
+    "release": "pnpm run release:version && pnpm build && pnpm run release:publish"
   },
   "keywords": [
     "exif",
@@ -44,6 +46,7 @@
   "packageManager": "pnpm@10.4.1",
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
+    "@changesets/cli": "^2.29.6",
     "@microsoft/api-extractor": "^7.52.10",
     "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
