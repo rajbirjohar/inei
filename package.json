@@ -1,6 +1,6 @@
 {
   "name": "inei",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A simple and efficient EXIF metadata parser for JPEG images in TypeScript.",
   "main": "index.js",
   "website": "https://github.com/rajbirjohar/inei",
