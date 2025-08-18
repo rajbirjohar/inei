@@ -1,6 +1,6 @@
 {
   "name": "inei",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A simple and efficient EXIF metadata parser for JPEG images. Written in pure TS.",
   "main": "index.js",
   "type": "module",

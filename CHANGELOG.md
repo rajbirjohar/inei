@@ -1,5 +1,12 @@
 # inei
 
+## 1.0.3
+
+### Patch Changes
+
+- 5aa8bf0: remove unnecessary type casts
+- 61a8468: add github ci workflows
+
 ## 1.0.2
 
 ### Patch Changes
