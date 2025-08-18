@@ -1,5 +1,11 @@
 # inei
 
+## 1.1.0
+
+### Minor Changes
+
+- 4159674: remove unplugin-dts dep and emit helper functions for formatting
+
 ## 1.0.3
 
 ### Patch Changes
