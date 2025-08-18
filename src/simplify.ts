@@ -18,7 +18,7 @@ export type SimplifiedTagValue =
   | string
   | number
   | number[]
-  | (number | null)[] // allow nulls if you prefer them over NaN
+  | (number | null)[]
   | Uint8Array
   | null
   | undefined;
@@ -45,21 +45,6 @@ const isPairArray = (v: unknown): v is [number, number][] =>
  * @param format - The format of the values, either 5 (RATIONAL) or 10 (SRATIONAL).
  * @return The simplified value(s). If the input is an array, returns an array of simplified values.
  */
-// export function simplifyRationals(
-//   values: [number, number],
-//   _format: TiffType.RATIONAL | TiffType.SRATIONAL,
-//   opts?: SimplifyOptions
-// ): number | null;
-// export function simplifyRationals(
-//   values: [number, number][],
-//   _format: TiffType.RATIONAL | TiffType.SRATIONAL,
-//   opts?: SimplifyOptions
-// ): (number | null)[];
-// export function simplifyRationals(
-//   values: unknown,
-//   _format: TiffType.RATIONAL | TiffType.SRATIONAL,
-//   opts?: SimplifyOptions
-// ): SimplifiedTagValue;
 export function simplifyRationals(
   values: unknown,
   _format: TiffTypeId,
@@ -118,18 +103,18 @@ export function castDegreeValues(get: Getter, set: Setter): void {
     if (!Array.isArray(arr)) {
       continue;
     }
-    const a = arr as unknown[];
+
     if (
-      typeof a[0] !== 'number' ||
-      typeof a[1] !== 'number' ||
-      typeof a[2] !== 'number'
+      typeof arr[0] !== 'number' ||
+      typeof arr[1] !== 'number' ||
+      typeof arr[2] !== 'number'
     ) {
       continue;
     }
 
-    const deg = a[0] as number;
-    const min = a[1] as number;
-    const sec = a[2] as number;
+    const deg = arr[0];
+    const min = arr[1];
+    const sec = arr[2];
 
     const ref = get({ section: p.section, type: p.refType, name: p.refName });
     const sign = ref === p.pos ? +1 : -1;

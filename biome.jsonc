@@ -10,7 +10,7 @@
       "**/*.json",
       "**/*.md",
       ".*.yml",
-      ".*.md"
+      "!.changeset.*"
     ]
   },
   "linter": {
