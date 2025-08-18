@@ -16,8 +16,16 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./format": {
+      "import": "./dist/format.js",
+      "types": "./dist/format.d.ts"
+    },
+    "./format-tags": {
+      "import": "./dist/format-tags.js",
+      "types": "./dist/format-tags.d.ts"
     }
   },
   "scripts": {
@@ -25,7 +33,9 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "demo": "tsx demo/index.ts",
-    "build": "vite build",
+    "build:js": "vite build",
+    "build:types": "tsc -p tsconfig.types.json",
+    "build": "pnpm build:js && pnpm build:types",
     "lint": "ultracite lint",
     "format": "ultracite format",
     "prepare": "lefthook install",
@@ -58,12 +68,11 @@
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
     "ultracite": "5.2.3",
-    "unplugin-dts": "1.0.0-beta.6",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss}": [
       "ultracite format"
     ]
   }

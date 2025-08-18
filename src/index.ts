@@ -14,3 +14,6 @@ export function parseExif(
   const parser = createParser(input, opts);
   return parser.parse();
 }
+
+export type { ParserOptions } from './parser';
+export type { ImageSize, ParsedExif, ThumbnailInfo } from './types';

@@ -62,6 +62,8 @@ export type ParsedExif = {
   tagsRaw: Record<string, unknown>;
   /** simplified, commonly-used subset (dates→epoch, GPS→decimal, rationals→float) */
   tags: Partial<ExifTagMap>;
+  /** formatted values for common tags (e.g., "ISO 100", "F/2.8") */
+  formattedTags?: Partial<Record<keyof ExifTagMap, string>>;
 };
 
 export type ThumbnailInfo = {

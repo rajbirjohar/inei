@@ -1,5 +1,6 @@
 import type { ByteStream } from './byte-stream';
 import { readIFDs } from './exif-sections';
+import { computeFormattedTags } from './format-tags';
 import { isSOF, readSections, readSizeFromSOF } from './jpeg';
 import { applyExifOffsetTags } from './offsets';
 import {
@@ -62,6 +63,11 @@ export type ParserOptions = {
    * If false, only the parsed values will be returned.
    */
   returnTags?: boolean;
+  /**
+   * Whether to include formatted tag values in the output.
+   * This is useful for displaying human-readable strings for common tags.
+   */
+  includeFormatted?: boolean;
 };
 
 const DEFAULTS: Required<ParserOptions> = {
@@ -71,6 +77,7 @@ const DEFAULTS: Required<ParserOptions> = {
   imageSize: true,
   hidePointers: true,
   returnTags: true,
+  includeFormatted: false,
 };
 
 const POINTER_TAGS = new Set<number>([
@@ -201,6 +208,14 @@ export class ExifParser {
         tagsRaw: { ...tags },
         tags, // narrowed to Partial<ExifTagMap> by consumer
       };
+
+      // Optionally resolve tag names
+      if (this.opts.includeFormatted) {
+        const formatted = computeFormattedTags(tags);
+        if (Object.keys(formatted).length) {
+          data.formattedTags = formatted;
+        }
+      }
 
       return { ok: true, data };
     } catch (e) {

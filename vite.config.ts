@@ -1,47 +1,42 @@
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
-import dts from 'unplugin-dts/vite';
 import { defineConfig } from 'vite';
 
 emptyDir(resolve(__dirname, 'dist'));
-emptyDir(resolve(__dirname, 'types'));
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
+    alias: { '@': resolve(__dirname, 'src') },
   },
   build: {
     lib: {
-      entry: [resolve(__dirname, 'src/index.ts')],
+      entry: [resolve(__dirname, 'src/index.ts')], // required by Vite
       name: 'inei',
-      formats: ['es'],
+      formats: ['es'], // ESM-only
     },
-  },
-  plugins: [
-    dts({
-      outDirs: ['dist'],
-      // include: ['src/index.ts'],
-      exclude: ['src/ignore'],
-      // aliasesExclude: [/^@components/],
-      staticImport: true,
-      // insertTypesEntry: true,
-      bundleTypes: true,
-      // declarationOnly: true,
-      compilerOptions: {
-        declarationMap: true,
+    // 👇 This is what creates dist/index.js, dist/format.js, dist/format-tags.js
+    rollupOptions: {
+      input: {
+        index: resolve(__dirname, 'src/index.ts'),
+        format: resolve(__dirname, 'src/format.ts'),
+        'format-tags': resolve(__dirname, 'src/format-tags.ts'),
       },
-    }),
-  ],
+      output: {
+        entryFileNames: '[name].js',
+      },
+      // external: [] // add runtime deps here if you ever have any
+    },
+    sourcemap: true,
+    minify: false,
+    target: 'es2020',
+  },
 });
 
 function emptyDir(dir: string) {
   if (!existsSync(dir)) {
     return;
   }
-
-  for (const file of readdirSync(dir)) {
-    rmSync(resolve(dir, file), { recursive: true, force: true });
+  for (const f of readdirSync(dir)) {
+    rmSync(resolve(dir, f), { recursive: true, force: true });
   }
 }
