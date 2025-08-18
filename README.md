@@ -64,4 +64,12 @@ if (exifData.ok) {
 For a full list of what this package extracts by default, you 
 can view `tags.ts` in the source code.
 
+## Formatting
 
+This package ships with a few formatting functions to help you format the EXIF data but you are always free to format it however you like.
+
+```typescript
+import { formatShutter } from "inei/format";
+
+const shutter = formatShutter(0.008); // "1/125"
+```
