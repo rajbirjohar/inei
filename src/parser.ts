@@ -73,8 +73,6 @@ const DEFAULTS: Required<ParserOptions> = {
   returnTags: true,
 };
 
-// --- Hoisted constants & helpers --------------------------------------------
-
 const POINTER_TAGS = new Set<number>([
   0x8769, // ExifOffset
   0x8825, // GPSInfo

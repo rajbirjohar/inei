@@ -89,7 +89,7 @@ async function runOnce(path: string, flags: Flags) {
   }
 
   const { image, tags, thumbnail } = res.data;
-  const t = tags as Record<string, unknown>;
+  const t = tags;
 
   // Summary (always shown)
   console.log('Image:', image ?? '(unknown)');
@@ -98,14 +98,12 @@ async function runOnce(path: string, flags: Flags) {
   console.log('Lens:', t.LensModel ?? t.LensInfo);
 
   // Derived niceties
-  const shutter = formatShutter(t.ExposureTime as number | undefined);
-  const aperture = formatAperture(t.FNumber as number | undefined);
-  const program = formatExposureProgram(
-    t.ExposureProgram as number | undefined
-  );
+  const shutter = formatShutter(t.ExposureTime);
+  const aperture = formatAperture(t.FNumber);
+  const program = formatExposureProgram(t.ExposureProgram);
   const dt =
     typeof t.DateTimeOriginal === 'number'
-      ? new Date((t.DateTimeOriginal as number) * 1000).toISOString()
+      ? new Date(t.DateTimeOriginal * 1000).toISOString()
       : undefined;
 
   console.log('Exposure:', {
