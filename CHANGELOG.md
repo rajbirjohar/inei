@@ -1,5 +1,11 @@
 # inei
 
+## 1.1.1
+
+### Patch Changes
+
+- b8b0be5: add more package details
+
 ## 1.1.0
 
 ### Minor Changes
