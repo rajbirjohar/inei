@@ -33,15 +33,6 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # When changesets are pending, this creates/updates a "Version Packages" PR.
-      # When none are pending (the version PR was just merged), this is a no-op.
-      - name: Changesets version
-        uses: changesets/action@v1
-        with:
-          version: pnpm run release:version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       # Publish if the local version is ahead of what's on npm.
       # Uses OIDC trusted publishers — no NPM_TOKEN needed.
       - name: Publish to npm
