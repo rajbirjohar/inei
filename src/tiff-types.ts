@@ -17,12 +17,12 @@ export type TiffType = (typeof TiffType)[keyof typeof TiffType];
 
 // If you need names by value (since we lose enum's reverse mapping):
 export const TiffTypeName: Record<TiffType, keyof typeof TiffType> = {
-  [TiffType.BYTE]: 'BYTE',
-  [TiffType.ASCII]: 'ASCII',
-  [TiffType.SHORT]: 'SHORT',
-  [TiffType.LONG]: 'LONG',
-  [TiffType.RATIONAL]: 'RATIONAL',
-  [TiffType.UNDEFINED]: 'UNDEFINED',
-  [TiffType.SLONG]: 'SLONG',
-  [TiffType.SRATIONAL]: 'SRATIONAL',
+  [TiffType.BYTE]: "BYTE",
+  [TiffType.ASCII]: "ASCII",
+  [TiffType.SHORT]: "SHORT",
+  [TiffType.LONG]: "LONG",
+  [TiffType.RATIONAL]: "RATIONAL",
+  [TiffType.UNDEFINED]: "UNDEFINED",
+  [TiffType.SLONG]: "SLONG",
+  [TiffType.SRATIONAL]: "SRATIONAL",
 } as const;

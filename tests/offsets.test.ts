@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { applyExifOffsetTags } from '../src/offsets';
+import { describe, expect, it } from "vitest";
+import { applyExifOffsetTags } from "../src/offsets";
 
-describe('offsets', () => {
-  it('ignores invalid offset strings gracefully', () => {
+describe("offsets", () => {
+  it("ignores invalid offset strings gracefully", () => {
     const tags: Record<string, unknown> = {
       DateTimeOriginal: 1_700_000_000,
-      OffsetTimeOriginal: 'weird',
+      OffsetTimeOriginal: "weird",
     };
     applyExifOffsetTags(tags);
     // unchanged

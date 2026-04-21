@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { parseExif } from '../src/index';
+import { describe, expect, it } from "vitest";
+import { parseExif } from "../src/index";
 import {
   buildJpegWithExifAndSize,
   buildTiffLE_IFD0,
-} from './utils/jpeg-builder';
+} from "./utils/jpeg-builder";
 
 // Tiny helper to add an UNDEFINED tag (type 7) via offset storage
 function addUndefinedTagToApp1(app1: Uint8Array): Uint8Array {
@@ -12,8 +12,8 @@ function addUndefinedTagToApp1(app1: Uint8Array): Uint8Array {
   return app1; // keep as-is if you don’t support UNDEFINED in this builder
 }
 
-describe('parser options', () => {
-  it('simplifyValues=false keeps raw rational pairs', () => {
+describe("parser options", () => {
+  it("simplifyValues=false keeps raw rational pairs", () => {
     const app1 = buildTiffLE_IFD0({ xres: [300, 1], yres: [240, 1] });
     const jpeg = buildJpegWithExifAndSize(app1, { width: 321, height: 123 });
 
@@ -32,7 +32,7 @@ describe('parser options', () => {
     expect(Array.isArray(res.data.tagsRaw.XResolution)).toBe(true);
   });
 
-  it('returnTags=false yields empty tag map', () => {
+  it("returnTags=false yields empty tag map", () => {
     const app1 = buildTiffLE_IFD0();
     const jpeg = buildJpegWithExifAndSize(app1, { width: 1, height: 1 });
     const res = parseExif(jpeg, { returnTags: false });
@@ -42,10 +42,10 @@ describe('parser options', () => {
     }
     expect(res.data.tags).toEqual({});
     // tagsRaw may also be empty depending on your implementation; accept {} or defined:
-    expect(typeof res.data.tagsRaw).toBe('object');
+    expect(typeof res.data.tagsRaw).toBe("object");
   });
 
-  it('readBinaryTags=true allows UNDEFINED (smoke)', () => {
+  it("readBinaryTags=true allows UNDEFINED (smoke)", () => {
     const app1 = addUndefinedTagToApp1(buildTiffLE_IFD0());
     const jpeg = buildJpegWithExifAndSize(app1, { width: 10, height: 10 });
     const res = parseExif(jpeg, { readBinaryTags: true });

@@ -1,34 +1,35 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
+import { existsSync, readdirSync, rmSync } from "node:fs";
+import { resolve } from "node:path";
+import { defineConfig } from "vite";
 
-emptyDir(resolve(__dirname, 'dist'));
+emptyDir(resolve(import.meta.dirname, "dist"));
 
 export default defineConfig({
   resolve: {
-    alias: { '@': resolve(__dirname, 'src') },
+    alias: { "@": resolve(import.meta.dirname, "src") },
   },
   build: {
     lib: {
-      entry: [resolve(__dirname, 'src/index.ts')], // required by Vite
-      name: 'inei',
-      formats: ['es'], // ESM-only
+      entry: [resolve(import.meta.dirname, "src/index.ts")], // required by Vite
+      name: "inei",
+      formats: ["es"], // ESM-only
     },
     // 👇 This is what creates dist/index.js, dist/format.js, dist/format-tags.js
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'src/index.ts'),
-        format: resolve(__dirname, 'src/format.ts'),
-        'format-tags': resolve(__dirname, 'src/format-tags.ts'),
+        index: resolve(import.meta.dirname, "src/index.ts"),
+        format: resolve(import.meta.dirname, "src/format.ts"),
+        "format-tags": resolve(import.meta.dirname, "src/format-tags.ts"),
+        xmp: resolve(import.meta.dirname, "src/xmp.ts"),
       },
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: "[name].js",
       },
       // external: [] // add runtime deps here if you ever have any
     },
     sourcemap: true,
     minify: false,
-    target: 'es2020',
+    target: "es2020",
   },
 });
 

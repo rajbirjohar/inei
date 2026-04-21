@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { simplifyRationals } from '../src/simplify';
-import { TiffType } from '../src/tiff-types';
+import { simplifyRationals } from "../src/simplify";
+import { TiffType } from "../src/tiff-types";
 
-describe('simplifyRationals', () => {
-  it('pair → number', () => {
+describe("simplifyRationals", () => {
+  it("pair → number", () => {
     expect(simplifyRationals([18, 10], TiffType.RATIONAL)).toBe(1.8);
   });
-  it('array of pairs → number[]', () => {
+  it("array of pairs → number[]", () => {
     expect(
       simplifyRationals(
         [
@@ -18,10 +18,10 @@ describe('simplifyRationals', () => {
       )
     ).toEqual([240, 300]);
   });
-  it('0 denominator → null by default', () => {
+  it("0 denominator → null by default", () => {
     expect(simplifyRationals([0, 0], TiffType.RATIONAL)).toBeNull();
   });
-  it('passes through non-rational shapes', () => {
-    expect(simplifyRationals('abc', TiffType.RATIONAL)).toBe('abc');
+  it("passes through non-rational shapes", () => {
+    expect(simplifyRationals("abc", TiffType.RATIONAL)).toBe("abc");
   });
 });

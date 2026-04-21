@@ -18,10 +18,10 @@ export const ThumbnailType = {
 
 export type ThumbnailType = (typeof ThumbnailType)[keyof typeof ThumbnailType];
 
-export type ImageSize = {
-  width: number;
+export interface ImageSize {
   height: number;
-};
+  width: number;
+}
 
 export const ExifSectionKind = {
   IFD0: 0,
@@ -33,47 +33,70 @@ export const ExifSectionKind = {
 export type ExifSectionKind =
   (typeof ExifSectionKind)[keyof typeof ExifSectionKind];
 
-export type ExifTagMap = {
-  Orientation?: Orientation;
-  ImageWidth?: number;
-  ImageHeight?: number;
-  XResolution?: number;
-  YResolution?: number;
-  ResolutionUnit?: number;
-  Make?: string;
-  Model?: string;
-  ISO?: number;
-  FNumber?: number;
-  ExposureTime?: number;
-  FocalLength?: number;
-  DateTimeOriginal?: number | string;
+export interface ExifTagMap {
+  ColorSpace?: number;
   CreateDate?: number | string;
-  ModifyDate?: number | string;
+  DateTimeOriginal?: number | string;
+  ExposureCompensation?: number;
+  ExposureProgram?: number;
+  ExposureTime?: number;
+  Flash?: number;
+  FNumber?: number;
+  FocalLength?: number;
+  FocalLengthIn35mmFormat?: number;
+  GPSAltitude?: number;
   GPSLatitude?: number | [number, number, number];
   GPSLongitude?: number | [number, number, number];
-  ExposureProgram?: number;
+  ImageHeight?: number;
+  ImageWidth?: number;
+  ISO?: number;
+  LensInfo?: number[];
+  LensMake?: string;
+  LensModel?: string;
+  LensSpecification?: number[];
+  Make?: string;
+  MeteringMode?: number;
+  Model?: string;
+  ModifyDate?: number | string;
+  Orientation?: Orientation;
+  ResolutionUnit?: number;
+  WhiteBalance?: number;
+  XResolution?: number;
+  YResolution?: number;
   [custom: string]: unknown;
-};
+}
 
-export type ParsedExif = {
-  image?: ImageSize;
-  thumbnail?: ThumbnailInfo;
-  /** raw name->value map (resolved names where possible, unknowns as "tag_0xXXXX") */
-  tagsRaw: Record<string, unknown>;
-  /** simplified, commonly-used subset (dates→epoch, GPS→decimal, rationals→float) */
-  tags: Partial<ExifTagMap>;
+export interface XmpData {
+  createDate?: string;
+  creator?: string;
+  description?: string;
+  label?: string;
+  rating?: number;
+  subject?: string[];
+  title?: string;
+}
+
+export interface ParsedExif {
   /** formatted values for common tags (e.g., "ISO 100", "F/2.8") */
   formattedTags?: Partial<Record<keyof ExifTagMap, string>>;
-};
+  image?: ImageSize;
+  /** simplified, commonly-used subset (dates→epoch, GPS→decimal, rationals→float) */
+  tags: Partial<ExifTagMap>;
+  /** raw name->value map (resolved names where possible, unknowns as "tag_0xXXXX") */
+  tagsRaw: Record<string, unknown>;
+  thumbnail?: ThumbnailInfo;
+  /** XMP metadata (title, description, keywords, rating) if present */
+  xmp?: XmpData;
+}
 
-export type ThumbnailInfo = {
-  type: ThumbnailType;
-  /** offset from TIFF header start (i.e., 6 bytes after "Exif\0\0") */
-  offsetFromTiff: number;
-  length: number;
+export interface ThumbnailInfo {
   /** absolute byte offset from start of file (computed at parse time) */
   absoluteOffset?: number; // NEW
-};
+  length: number;
+  /** offset from TIFF header start (i.e., 6 bytes after "Exif\0\0") */
+  offsetFromTiff: number;
+  type: ThumbnailType;
+}
 
 export type ReadValueInlineReturn = string | number | number[] | undefined;
 
@@ -99,11 +122,11 @@ export type SimplifiedTagValue =
   | undefined;
 
 export type ExifErrorCode =
-  | 'NOT_JPEG'
-  | 'NO_EXIF'
-  | 'INVALID_TIFF'
-  | 'TRUNCATED'
-  | 'UNKNOWN';
+  | "NOT_JPEG"
+  | "NO_EXIF"
+  | "INVALID_TIFF"
+  | "TRUNCATED"
+  | "UNKNOWN";
 
 export class ExifError extends Error {
   code: ExifErrorCode;
@@ -111,6 +134,6 @@ export class ExifError extends Error {
   constructor(code: ExifErrorCode, message: string) {
     super(message);
     this.code = code;
-    this.name = 'ExifError';
+    this.name = "ExifError";
   }
 }

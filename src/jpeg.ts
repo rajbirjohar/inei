@@ -1,5 +1,5 @@
-import type { ByteStream } from './byte-stream';
-import type { ImageSize } from './types';
+import type { ByteStream } from "./byte-stream";
+import type { ImageSize } from "./types";
 
 /**
  * @module jpeg
@@ -87,7 +87,7 @@ export function readSections(
 ): void {
   // Verify SOI (0xFF, SOI)
   if (stream.u8() !== 0xff || stream.u8() !== SOI) {
-    throw new Error('Not a JPEG (missing SOI)');
+    throw new Error("Not a JPEG (missing SOI)");
   }
 
   for (;;) {
@@ -108,7 +108,7 @@ export function readSections(
     const payloadLen = len - 2;
 
     if (payloadLen < 0 || payloadLen > stream.remaining()) {
-      throw new Error('Corrupt JPEG segment length');
+      throw new Error("Corrupt JPEG segment length");
     }
 
     const start = stream.tell();
@@ -127,7 +127,7 @@ export function readSections(
  */
 export function readSizeFromSOF(section: ByteStream): ImageSize {
   const s = section.branch(0);
-  s.setEndian('BE');
+  s.setEndian("BE");
   const _precision = s.u8();
   const height = s.u16();
   const width = s.u16();
