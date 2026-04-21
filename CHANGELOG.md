@@ -1,6 +1,17 @@
 # inei
 
+## 3.0.0
+
+### Major Changes
+
+- 21964e8: Add PNG, HEIC/HEIF/AVIF, and XMP support. Add convenience APIs (gps, orientation, thumbnail, thumbnailUrl, parseExifFromBlob). Add format functions for focal length, date, exposure compensation, GPS coordinates, metering mode, flash, and orientation. Expand EXIF tag coverage (FocalLengthIn35mmFormat, LensMake, LensSpecification). Upgrade all dependencies and pin versions.
+
+### Patch Changes
+
+- 21964e8: Updated workflow to use trusted publishers
+
 <<<<<<< HEAD
+
 ## 2.0.0
 
 ### Major Changes
@@ -8,7 +19,9 @@
 - a74bda7: Add PNG, HEIC/HEIF/AVIF, and XMP support. Add convenience APIs (gps, orientation, thumbnail, thumbnailUrl, parseExifFromBlob). Add format functions for focal length, date, exposure compensation, GPS coordinates, metering mode, flash, and orientation. Expand EXIF tag coverage (FocalLengthIn35mmFormat, LensMake, LensSpecification). Upgrade all dependencies and pin versions.
 
 =======
->>>>>>> 1e9ab61 (fix merge conflicts)
+
+> > > > > > > 1e9ab61 (fix merge conflicts)
+
 ## 1.1.1
 
 ### Patch Changes
