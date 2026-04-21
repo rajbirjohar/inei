@@ -44,7 +44,8 @@ jobs:
 
       # Publish if the local version is ahead of what's on npm.
       # Uses OIDC trusted publishers — no NPM_TOKEN needed.
-      - name: Publish to npm
+      # Also creates a git tag and GitHub release.
+      - name: Publish to npm and create GitHub release
         run: |
           CURRENT=$(node -p "require('./package.json').version")
           PUBLISHED=$(npm view inei version 2>/dev/null || echo "0.0.0")
@@ -52,6 +53,11 @@ jobs:
             echo "Publishing inei@$CURRENT (npm has $PUBLISHED)"
             pnpm build
             npm publish --provenance --access public
+            git tag "v$CURRENT"
+            git push origin "v$CURRENT"
+            gh release create "v$CURRENT" --generate-notes --title "v$CURRENT"
           else
             echo "inei@$CURRENT already published, skipping"
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
