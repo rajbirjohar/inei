@@ -1,7 +1,7 @@
-import { expect, it } from 'vitest';
-import { ByteStream } from '../src/byte-stream';
-import { isSOF, readSections, readSizeFromSOF } from '../src/jpeg';
-import { be16 } from './utils/jpeg-builder';
+import { expect, it } from "vitest";
+import { ByteStream } from "../src/byte-stream";
+import { isSOF, readSections, readSizeFromSOF } from "../src/jpeg";
+import { be16 } from "./utils/jpeg-builder";
 
 function concat(...parts: Uint8Array[]) {
   const len = parts.reduce((a, b) => a + b.length, 0);
@@ -14,7 +14,7 @@ function concat(...parts: Uint8Array[]) {
   return out;
 }
 
-it('readSections walks non-APP1 then APP1 then SOF', () => {
+it("readSections walks non-APP1 then APP1 then SOF", () => {
   const SOI = new Uint8Array([0xff, 0xd8]);
   const DQT = concat(
     new Uint8Array([0xff, 0xdb]),
@@ -41,7 +41,7 @@ it('readSections walks non-APP1 then APP1 then SOF', () => {
   const EOI = new Uint8Array([0xff, 0xd9]);
 
   const jpeg = concat(SOI, DQT, APP1, SOF0, EOI);
-  const s = new ByteStream(jpeg, 'BE'); // endianness irrelevant for marker walk
+  const s = new ByteStream(jpeg, "BE"); // endianness irrelevant for marker walk
 
   const seen: number[] = [];
   readSections(s, (marker, section) => {

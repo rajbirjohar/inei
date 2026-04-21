@@ -1,0 +1,153 @@
+# inei
+
+> EXIF and XMP metadata parser for JPEG, PNG, and HEIC/HEIF/AVIF images. TypeScript. Zero dependencies.
+
+## What this library does
+
+inei reads image metadata from binary image files. It accepts an ArrayBuffer, Uint8Array, Buffer, Blob, or File and returns structured EXIF tags, XMP data, image dimensions, and embedded thumbnails.
+
+Supported formats: JPEG, PNG, HEIC, HEIF, AVIF. Format is auto-detected from magic bytes.
+
+## Install
+
+```
+npm install inei
+```
+
+## Core API
+
+```typescript
+import { parseExif } from "inei";
+
+const result = parseExif(buffer);
+// Returns: { ok: true, data: ParsedExif } | { ok: false, error: ExifError }
+
+if (result.ok) {
+  result.data.tags;          // { Make: "Canon", Model: "EOS R6", ISO: 400, FNumber: 2.8, ... }
+  result.data.image;         // { width: 5472, height: 3648 }
+  result.data.xmp;           // { title: "My Photo", subject: ["landscape"], rating: 5 }
+  result.data.thumbnail;     // { type, offsetFromTiff, length, absoluteOffset }
+  result.data.formattedTags; // only present when includeFormatted: true
+}
+```
+
+### Async (browser File/Blob input)
+
+```typescript
+import { parseExifFromBlob } from "inei";
+const result = await parseExifFromBlob(file);
+```
+
+### Convenience functions
+
+```typescript
+import { gps, orientation, thumbnail, thumbnailUrl } from "inei";
+
+gps(buffer);          // { latitude: 37.7749, longitude: -122.4194 } | undefined
+orientation(buffer);  // 1-8 | undefined
+thumbnail(buffer);    // Uint8Array | undefined
+thumbnailUrl(buffer); // "blob:..." | undefined (browser only)
+```
+
+### Options
+
+```typescript
+parseExif(buffer, {
+  simplifyValues: true,     // rationals→floats, dates→epoch seconds, GPS→decimal degrees
+  imageSize: true,          // extract width/height from container
+  includeFormatted: false,  // add formattedTags with human-readable strings
+  hidePointers: true,       // omit internal IFD pointer tags
+  readBinaryTags: false,    // include UNDEFINED (binary blob) tags
+  returnTags: true,         // include the tag map
+  resolveTagNames: true,    // map tag IDs to names
+});
+```
+
+### Formatted output
+
+```typescript
+const result = parseExif(buffer, { includeFormatted: true });
+result.data.formattedTags;
+// { Shutter: "1/800", Aperture: "f/10", ISO: "ISO 400", FocalLength: "50mm",
+//   Make: "Canon", Model: "EOS R6", LensModel: "RF50mm F1.2 L USM",
+//   GPS: "37.77° N, 122.42° W", DateTimeOriginal: "Oct 22, 2023, 6:46 PM", ... }
+```
+
+### Individual formatters (inei/format)
+
+```typescript
+import { formatShutter, formatAperture, formatFocalLength, formatDate,
+         formatOrientation, formatExposureCompensation, formatExposureProgram,
+         formatMeteringMode, formatFlash, formatGPSCoordinate } from "inei/format";
+```
+
+### Batch formatter (inei/format-tags)
+
+```typescript
+import { computeFormattedTags } from "inei/format-tags";
+const formatted = computeFormattedTags(result.data.tags);
+```
+
+### XMP parser (inei/xmp)
+
+```typescript
+import { parseXmp } from "inei/xmp";
+const data = parseXmp(xmlString);
+// { title, description, creator, subject, rating, label, createDate }
+```
+
+### Thumbnail extraction
+
+```typescript
+import { parseExif, extractThumbnail } from "inei";
+const result = parseExif(buffer);
+if (result.ok) {
+  const bytes = extractThumbnail(buffer, result.data); // Uint8Array of JPEG thumbnail
+}
+```
+
+## Key types
+
+```typescript
+interface ParsedExif {
+  image?: { width: number; height: number };
+  tags: Partial<ExifTagMap>;
+  tagsRaw: Record<string, unknown>;
+  thumbnail?: ThumbnailInfo;
+  formattedTags?: Record<string, string>;
+  xmp?: XmpData;
+}
+
+interface ExifTagMap {
+  Make?: string; Model?: string; ISO?: number; FNumber?: number;
+  ExposureTime?: number; ExposureCompensation?: number; ExposureProgram?: number;
+  FocalLength?: number; FocalLengthIn35mmFormat?: number;
+  LensMake?: string; LensModel?: string;
+  DateTimeOriginal?: number | string; CreateDate?: number | string; ModifyDate?: number | string;
+  GPSLatitude?: number; GPSLongitude?: number; GPSAltitude?: number;
+  Orientation?: 1|2|3|4|5|6|7|8;
+  Flash?: number; MeteringMode?: number; WhiteBalance?: number;
+  ImageWidth?: number; ImageHeight?: number;
+  [custom: string]: unknown;
+}
+
+interface XmpData {
+  title?: string; description?: string; creator?: string;
+  subject?: string[]; rating?: number; label?: string; createDate?: string;
+}
+
+class ExifError extends Error {
+  code: "NOT_JPEG" | "NO_EXIF" | "INVALID_TIFF" | "TRUNCATED" | "UNKNOWN";
+}
+```
+
+## Error handling
+
+parseExif never throws. Returns `{ ok: false, error: ExifError }` on failure.
+Convenience functions (gps, orientation, thumbnail, thumbnailUrl) return undefined on failure.
+
+## Constraints
+
+- ESM only
+- Reads full buffer into memory (no streaming/chunked reads)
+- No IPTC, ICC, or MakerNote support

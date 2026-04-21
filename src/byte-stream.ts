@@ -15,7 +15,7 @@
  * @type Endianness
  * Represents the endianness of the byte stream.
  */
-export type Endianness = 'LE' | 'BE';
+export type Endianness = "LE" | "BE";
 
 /**
  * @description
@@ -75,7 +75,7 @@ export class ByteStream {
    */
   base = 0;
 
-  constructor(buf: Uint8Array, endian: Endianness = 'LE', base = 0) {
+  constructor(buf: Uint8Array, endian: Endianness = "LE", base = 0) {
     this.buf = buf;
     this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
     this.setEndian(endian);
@@ -93,14 +93,14 @@ export class ByteStream {
    */
   static from(
     input: ArrayBuffer | Uint8Array | Buffer,
-    endian: Endianness = 'LE'
+    endian: Endianness = "LE"
   ): ByteStream {
     if (input instanceof Uint8Array) {
       return new ByteStream(input, endian, 0);
     }
     if (
-      typeof Buffer !== 'undefined' &&
-      typeof globalThis.Buffer !== 'undefined' &&
+      typeof Buffer !== "undefined" &&
+      typeof globalThis.Buffer !== "undefined" &&
       input instanceof globalThis.Buffer
     ) {
       const b = input as unknown as Uint8Array;
@@ -113,17 +113,17 @@ export class ByteStream {
     if (input instanceof ArrayBuffer) {
       return new ByteStream(new Uint8Array(input), endian, 0);
     }
-    throw new TypeError('Unsupported input type for ByteStream');
+    throw new TypeError("Unsupported input type for ByteStream");
   }
 
   setEndian(endian: Endianness) {
-    this.little = endian === 'LE';
+    this.little = endian === "LE";
   }
   flipEndian() {
     this.little = !this.little;
   }
   endianness(): Endianness {
-    return this.little ? 'LE' : 'BE';
+    return this.little ? "LE" : "BE";
   }
   isLittleEndian(): boolean {
     return this.little;
@@ -182,7 +182,7 @@ export class ByteStream {
       range
     );
 
-    return new ByteStream(u8, this.little ? 'LE' : 'BE', abs);
+    return new ByteStream(u8, this.little ? "LE" : "BE", abs);
   }
 
   slice(len: number): Uint8Array {
@@ -201,12 +201,12 @@ export class ByteStream {
     return new Uint8Array(u8);
   }
 
-  readString(len: number, encoding = 'utf-8'): string {
+  readString(len: number, encoding = "utf-8"): string {
     const u8 = this.slice(len);
     const td: { decode: (b: Uint8Array) => string } =
-      typeof TextDecoder !== 'undefined'
-        ? new TextDecoder(encoding)
-        : { decode: (b) => String.fromCharCode(...b) };
+      typeof TextDecoder === "undefined"
+        ? { decode: (b) => String.fromCharCode(...b) }
+        : new TextDecoder(encoding);
     return td.decode(u8);
   }
 

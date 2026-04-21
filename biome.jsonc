@@ -1,6 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
-  "extends": ["ultracite"],
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+  "extends": ["ultracite/biome/core"],
   "files": {
     "includes": [
       "**/*.ts",

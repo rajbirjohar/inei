@@ -1,5 +1,5 @@
-import { ByteStream } from './byte-stream';
-import { ExifParser, type ParserOptions } from './parser';
+import { ByteStream } from "./byte-stream";
+import { ExifParser, type ParserOptions } from "./parser";
 
 /**
  * @description
@@ -12,6 +12,6 @@ export function createParser(
   input: ArrayBuffer | Uint8Array | Buffer,
   opts?: ParserOptions
 ): ExifParser {
-  const stream = ByteStream.from(input, 'LE');
+  const stream = ByteStream.from(input, "LE");
   return new ExifParser(stream, opts);
 }

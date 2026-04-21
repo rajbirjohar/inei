@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { extractThumbnail } from '../src/thumbnail';
-import type { ParsedExif } from '../src/types';
+import { describe, expect, it } from "vitest";
+import { extractThumbnail } from "../src/thumbnail";
+import type { ParsedExif } from "../src/types";
 
-describe('extractThumbnail', () => {
-  it('returns a slice at absolute offset', () => {
+describe("extractThumbnail", () => {
+  it("returns a slice at absolute offset", () => {
     const buf = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     const exif: ParsedExif = {
       image: undefined,
@@ -20,7 +20,7 @@ describe('extractThumbnail', () => {
     expect(t).toEqual(new Uint8Array([6, 7, 8]));
   });
 
-  it('returns undefined when absoluteOffset missing, length invalid, or out of range', () => {
+  it("returns undefined when absoluteOffset missing, length invalid, or out of range", () => {
     const buf = new Uint8Array(10);
 
     const noOffset: ParsedExif = {

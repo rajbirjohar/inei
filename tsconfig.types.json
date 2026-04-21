@@ -16,10 +16,6 @@
     "skipLibCheck": true,
     "stripInternal": true,
     "newLine": "lf",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "noEmitOnError": false
   },
   "include": ["src/**/*.ts"],

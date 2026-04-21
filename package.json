@@ -1,20 +1,29 @@
 {
   "name": "inei",
-  "version": "1.1.1",
-  "description": "A simple and efficient EXIF metadata parser for JPEG images in TypeScript.",
-  "main": "index.js",
-  "website": "https://github.com/rajbirjohar/inei",
+  "version": "1.1.0",
+  "description": "EXIF and XMP metadata parser for JPEG, PNG, and HEIC/HEIF/AVIF. Zero dependencies. TypeScript.",
+  "main": "dist/index.js",
   "type": "module",
+  "homepage": "https://github.com/rajbirjohar/inei#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajbirjohar/inei.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajbirjohar/inei/issues"
+  },
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "llms.txt"
   ],
   "publishConfig": {
     "access": "public"
   },
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -27,6 +36,10 @@
     "./format-tags": {
       "import": "./dist/format-tags.js",
       "types": "./dist/format-tags.d.ts"
+    },
+    "./xmp": {
+      "import": "./dist/xmp.js",
+      "types": "./dist/xmp.d.ts"
     }
   },
   "scripts": {
@@ -37,8 +50,8 @@
     "build:js": "vite build",
     "build:types": "tsc -p tsconfig.types.json",
     "build": "pnpm build:js && pnpm build:types",
-    "lint": "ultracite lint",
-    "format": "ultracite format",
+    "lint": "ultracite check",
+    "format": "ultracite fix",
     "prepare": "lefthook install",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build",
@@ -48,33 +61,51 @@
   },
   "keywords": [
     "exif",
+    "exif-parser",
+    "exif-reader",
+    "xmp",
     "metadata",
+    "image-metadata",
     "image",
     "photo",
     "parser",
-    "jpeg"
+    "jpeg",
+    "jpg",
+    "png",
+    "heic",
+    "heif",
+    "avif",
+    "gps",
+    "orientation",
+    "thumbnail",
+    "camera",
+    "photography",
+    "typescript"
   ],
-  "author": "Rajbir Johar",
+  "author": {
+    "name": "Rajbir Johar",
+    "url": "https://github.com/rajbirjohar"
+  },
   "license": "ISC",
   "packageManager": "pnpm@10.4.1",
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
-    "@changesets/cli": "^2.29.6",
-    "@microsoft/api-extractor": "^7.52.10",
-    "@types/node": "^24.3.0",
-    "@vitest/coverage-v8": "^3.2.4",
-    "@vitest/ui": "3.2.4",
-    "lefthook": "^1.12.3",
-    "lint-staged": "^16.1.5",
-    "tsx": "^4.20.4",
-    "typescript": "^5.9.2",
-    "ultracite": "5.2.3",
-    "vite": "^7.1.2",
-    "vitest": "^3.2.4"
+    "@biomejs/biome": "2.4.12",
+    "@changesets/cli": "2.31.0",
+    "@microsoft/api-extractor": "7.58.7",
+    "@types/node": "25.6.0",
+    "@vitest/coverage-v8": "4.1.5",
+    "@vitest/ui": "4.1.5",
+    "lefthook": "2.1.6",
+    "lint-staged": "16.4.0",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3",
+    "ultracite": "7.6.0",
+    "vite": "8.0.9",
+    "vitest": "4.1.5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss}": [
-      "ultracite format"
+      "ultracite fix"
     ]
   }
 }

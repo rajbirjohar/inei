@@ -83,13 +83,13 @@ export function buildTiffLE_IFD0(opts?: {
   xres?: [number, number];
   yres?: [number, number];
 }): U8 {
-  const makeBytes = withNull(ascii(opts?.make ?? 'TestCam'));
-  const modelBytes = withNull(ascii(opts?.model ?? 'ModelX'));
+  const makeBytes = withNull(ascii(opts?.make ?? "TestCam"));
+  const modelBytes = withNull(ascii(opts?.model ?? "ModelX"));
   const xres = opts?.xres ?? [240, 1];
   const yres = opts?.yres ?? [240, 1];
 
   // TIFF header: "II" (LE), magic 42, offset to IFD0 = 8
-  const tiffHeader = concat(ascii('II'), le16(42), le32(8));
+  const tiffHeader = concat(ascii("II"), le16(42), le32(8));
 
   const entries: U8[] = [];
   const dataArea: U8[] = [];
@@ -152,7 +152,7 @@ export function buildTiffLE_IFD0(opts?: {
   const ifd0 = concat(numEntries, ...entries, nextIFD, ...dataArea);
 
   // APP1 payload must start with "Exif\0\0"
-  const exifPrefix = concat(ascii('Exif'), new Uint8Array([0, 0]));
+  const exifPrefix = concat(ascii("Exif"), new Uint8Array([0, 0]));
   return concat(exifPrefix, tiffHeader, ifd0);
 }
 

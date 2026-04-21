@@ -46,8 +46,8 @@ export function parseExifDateToEpochSeconds(input: string): number | undefined {
     const h = Number(m2[4]),
       mi = Number(m2[5]),
       s = Number(m2[6]);
-    const isZ = m2[7] === 'Z';
-    const sign = m2[8] === '-' ? -1 : 1;
+    const isZ = m2[7] === "Z";
+    const sign = m2[8] === "-" ? -1 : 1;
     const offH = Number(m2[9] || 0),
       offM = Number(m2[10] || 0);
     let sec = Date.UTC(y, mo - 1, d, h, mi, s) / 1000;

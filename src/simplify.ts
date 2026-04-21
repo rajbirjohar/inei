@@ -1,6 +1,6 @@
-import { parseExifDateToEpochSeconds } from './date-util';
-import type { TiffType as TiffTypeId } from './tiff-types'; // VALUE (object with constants)
-import { ExifSectionKind } from './types';
+import { parseExifDateToEpochSeconds } from "./date-util";
+import type { TiffType as TiffTypeId } from "./tiff-types"; // VALUE (object with constants)
+import { ExifSectionKind } from "./types";
 
 /**
  * @module simplify
@@ -23,15 +23,15 @@ export type SimplifiedTagValue =
   | null
   | undefined;
 
-export type SimplifyOptions = {
+export interface SimplifyOptions {
   zeroDenIsNull?: boolean;
-};
+}
 
 const isPair = (v: unknown): v is [number, number] =>
   Array.isArray(v) &&
   v.length === 2 &&
-  typeof v[0] === 'number' &&
-  typeof v[1] === 'number';
+  typeof v[0] === "number" &&
+  typeof v[1] === "number";
 
 const isPairArray = (v: unknown): v is [number, number][] =>
   Array.isArray(v) && v.every(isPair);
@@ -54,8 +54,12 @@ export function simplifyRationals(
     return values;
   }
 
-  const toNum = ([num, den]: [number, number]) =>
-    den === 0 ? (opts.zeroDenIsNull ? null : Number.NaN) : num / den;
+  const toNum = ([num, den]: [number, number]) => {
+    if (den === 0) {
+      return opts.zeroDenIsNull ? null : Number.NaN;
+    }
+    return num / den;
+  };
 
   if (isPair(values)) {
     return toNum(values);
@@ -83,18 +87,18 @@ export function castDegreeValues(get: Getter, set: Setter): void {
     {
       section: ExifSectionKind.GPSIFD,
       type: 0x0002,
-      name: 'GPSLatitude',
+      name: "GPSLatitude",
       refType: 0x0001,
-      refName: 'GPSLatitudeRef',
-      pos: 'N' as const,
+      refName: "GPSLatitudeRef",
+      pos: "N" as const,
     },
     {
       section: ExifSectionKind.GPSIFD,
       type: 0x0004,
-      name: 'GPSLongitude',
+      name: "GPSLongitude",
       refType: 0x0003,
-      refName: 'GPSLongitudeRef',
-      pos: 'E' as const,
+      refName: "GPSLongitudeRef",
+      pos: "E" as const,
     },
   ];
 
@@ -105,9 +109,9 @@ export function castDegreeValues(get: Getter, set: Setter): void {
     }
 
     if (
-      typeof arr[0] !== 'number' ||
-      typeof arr[1] !== 'number' ||
-      typeof arr[2] !== 'number'
+      typeof arr[0] !== "number" ||
+      typeof arr[1] !== "number" ||
+      typeof arr[2] !== "number"
     ) {
       continue;
     }
@@ -125,18 +129,18 @@ export function castDegreeValues(get: Getter, set: Setter): void {
 
 export function castDateValues(get: Getter, set: Setter): void {
   const keys = [
-    { section: ExifSectionKind.SubIFD, type: 0x0132, name: 'ModifyDate' },
-    { section: ExifSectionKind.SubIFD, type: 0x9003, name: 'DateTimeOriginal' },
-    { section: ExifSectionKind.SubIFD, type: 0x9004, name: 'CreateDate' },
+    { section: ExifSectionKind.SubIFD, type: 0x0132, name: "ModifyDate" },
+    { section: ExifSectionKind.SubIFD, type: 0x9003, name: "DateTimeOriginal" },
+    { section: ExifSectionKind.SubIFD, type: 0x9004, name: "CreateDate" },
   ];
 
   for (const k of keys) {
     const raw = get(k);
-    if (typeof raw !== 'string') {
+    if (typeof raw !== "string") {
       continue;
     }
     const ts = parseExifDateToEpochSeconds(raw);
-    if (typeof ts === 'number' && Number.isFinite(ts)) {
+    if (typeof ts === "number" && Number.isFinite(ts)) {
       set(k, ts);
     }
   }
